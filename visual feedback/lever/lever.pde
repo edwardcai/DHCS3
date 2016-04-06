@@ -7,7 +7,7 @@ int index = 0;
 float screenTransX = 0;
 float screenTransY = 0;
 float screenRotation = 0;
-float screenZ = 50f;
+float screenZ = 150f;
 
 int trialCount = 20; //this will be set higher for the bakeoff
 float border = 0; //have some padding from the sides
@@ -17,7 +17,7 @@ int startTime = 0; // time starts when the first click is captured
 int finishTime = 0; //records the time of the final click
 boolean userDone = false;
 
-final int screenPPI = 120; //what is the DPI of the screen you are using
+final int screenPPI = 424; //what is the DPI of the screen you are using
 //Many phones listed here: https://en.wikipedia.org/wiki/Comparison_of_high-definition_smartphone_displays 
 
 private class Target
@@ -37,7 +37,7 @@ float inchesToPixels(float inch)
 
 void setup() {
   //size does not let you use variables, so you have to manually compute this
-  size(400, 700); //set this, based on your sceen's PPI to be a 2x3.5" area.
+  size(848, 1484); //set this, based on your sceen's PPI to be a 2x3.5" area.
 
   rectMode(CENTER);
   textFont(createFont("Arial", inchesToPixels(.15f))); //sets the font to Arial that is .3" tall
@@ -49,8 +49,10 @@ void setup() {
   for (int i=0; i<trialCount; i++) //don't change this! 
   {
     Target t = new Target();
-    t.x = random(-width/2+border, width/2-border); //set a random x with some padding
-    t.y = random(-height/2+border, height/2-border); //set a random y with some padding
+    //t.x = random(-width/2+border, width/2-border); //set a random x with some padding
+    //t.y = random(-height/2+border, height/2-border); //set a random y with some padding
+    t.x = 0; //set a random x with some padding
+    t.y = 0; //set a random y with some padding
     t.rotation = random(0, 360); //random rotation between 0 and 360
     t.z = ((i%20)+1)*inchesToPixels(.15f); //increasing size from .15 up to 3.0"
     targets.add(t);
@@ -71,12 +73,16 @@ void drawLever(){
   ellipse(0,0,5,5); //target circle center
   
   //draw lever
-  rotate(radians(225)); //rotate it to one of the corners
+  rotate(radians(45)); //rotate it to one of the corners
   float leverWidth = curTarget.z/3;
   float leverHeight = curTarget.z/7;
   float cSquared = 2 * (float) Math.pow(curTarget.z,2);
   float c = (float)Math.pow(cSquared,0.5);
   rect(c/2 + leverWidth/2, 0, leverWidth, leverHeight);
+}
+
+float calculateAngle(int x1, int y1, int x2, int y2) {
+  return (int) atan((y1-y2)/(x1-x2)); 
 }
 
 void draw() {
@@ -104,7 +110,6 @@ void draw() {
   Target t = targets.get(trialIndex);
 
 
-  println("in draw: " + t.x + "; " + t.y + "; "+ t.z + "; "+ t.rotation);
   translate(t.x, t.y); //center the drawing coordinates to the center of the screen
   translate(screenTransX, screenTransY); //center the drawing coordinates to the center of the screen
 
@@ -138,6 +143,7 @@ void draw() {
 
 void scaffoldControlLogic()
 {
+  /*
   //upper left corner, rotate counterclockwise
   text("CCW", inchesToPixels(.2f), inchesToPixels(.2f));
   if (mousePressed && dist(0, 0, mouseX, mouseY)<inchesToPixels(.5f))
@@ -147,7 +153,7 @@ void scaffoldControlLogic()
   text("CW", width-inchesToPixels(.2f), inchesToPixels(.2f));
   if (mousePressed && dist(width, 0, mouseX, mouseY)<inchesToPixels(.5f))
     screenRotation++;
-
+  */
   //lower left corner, decrease Z
   text("-", inchesToPixels(.2f), height-inchesToPixels(.2f));
   if (mousePressed && dist(0, height, mouseX, mouseY)<inchesToPixels(.5f))
@@ -180,10 +186,17 @@ void scaffoldControlLogic()
   ;
 }
 
+void mousePressed() 
+{
+   Target t = targets.get(trialIndex);
+   t.rotation = calculateAngle(0,0, mouseX, mouseY); 
+}
+
 void mouseReleased()
 {
+  
   //check to see if user clicked middle of screen
-  if (dist(width/2, height/2, mouseX, mouseY)<inchesToPixels(.5f))
+  if (dist(width, 0, mouseX, mouseY)<inchesToPixels(.5f))
   {
     if (userDone==false && !checkForSuccess())
       errorCount++;
@@ -200,7 +213,9 @@ void mouseReleased()
       finishTime = millis();
     }
   }
+  
 }
+
 
 public boolean checkForSuccess()
 {
