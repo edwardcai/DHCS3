@@ -90,26 +90,39 @@ void draw() {
   pushMatrix();
   translate(width/2, height/2); //center the drawing coordinates to the center of the screen
 
+  
+  if (trialIndex >= trialCount) return; 
   Target t = targets.get(trialIndex);
 
 
   translate(t.x, t.y); //center the drawing coordinates to the center of the screen
   translate(screenTransX, screenTransY); //center the drawing coordinates to the center of the screen
+ 
+
 
   rotate(radians(t.rotation));
-
    
   fill(255, 0, 0); //set color to semi translucent
-  if(checkForDist()) fill(0,255,0);
   rect(0, 0, t.z, t.z);
-  if (!isMove) {
-    stroke(0);
-    line(-t.z/2, -t.z/2, t.z/2, t.z/2);
-    line(-t.z/2, t.z/2, t.z/2, -t.z/2);
-  }
   fill(0);
-  noStroke();
   ellipse(0,0, 10,10); //center circle for targetting (gray) square
+  
+  if (!isMove) {
+    stroke(255);
+    if (checkForAngle()) stroke(#00ff00);
+    line(-t.z*30, -t.z*30, t.z*30, t.z*30);
+    line(-t.z*30, t.z*30, t.z*30, -t.z*30);
+  }
+  noStroke();
+  if (!isMove) {
+    rotate(-radians(t.rotation + 45));
+    fill(10,10,10,130);
+    triangle(0,0, 1800,200,1800,-200);
+    triangle(0,0, -1800,200, -1800,-200);
+    triangle(0,0, 200,1800,-200,1800);
+    triangle(0,0, 200,-1800, -200,-1800);
+  }
+  noStroke();
 
   popMatrix();
 
@@ -127,6 +140,7 @@ void draw() {
   noFill();
   stroke(0);
   strokeWeight(2);
+  if(checkForDist()) fill(0,255,0);
   ellipse(0,0, inchesToPixels(.1),inchesToPixels(.1));
   noStroke();
 
@@ -190,6 +204,8 @@ void mousePressed()
   startingX = mouseX;
   startingY = mouseY;
   }
+  
+
 }
 
 void mouseDragged() {
@@ -198,8 +214,8 @@ void mouseDragged() {
   if (!isMove) {
     float dRotation = calculateAngle(width/2,height/2, mouseX, mouseY) - startingRotation;
     t.rotation = initRotation + dRotation; 
-    float dZ = (calculateDist(width/2,height/2, mouseX, mouseY) - startingZ) * 2;
-    t.z = constrain(initZ + dZ, inchesToPixels(.15f), inchesToPixels(3f));
+    float dZ = initZ - initZ * (calculateDist(width/2,height/2, mouseX, mouseY)/ startingZ);
+    t.z = constrain(initZ - (dZ*3), inchesToPixels(.15f), inchesToPixels(3f));
   } else {
     float dX = mouseX - startingX;
     float dY = mouseY - startingY;
@@ -211,37 +227,35 @@ void mouseDragged() {
 
 void mouseReleased()
 {  
-  println(millis() - startPress);
   if (millis() - startPress < 100) {
-    isMove = !isMove; 
+     if (trialIndex==trialCount && userDone==true)
+      {
+        trialIndex = -1;
+        userDone = false;
+        finishTime = millis();
+        startTime = 0;
+      }
+
+      isMove = !isMove; 
+      if (checkForSuccess()) {
+        trialIndex++;
+        isMove = true; 
+      }
+      
+        screenTransX = 0;
+  screenTransY = 0;
+
+  if (trialIndex==trialCount && userDone==false)
+  {
+    userDone = true;
+    finishTime = millis();
   }
+  }
+
+  
+  println(millis() - startPress);
   
   //check to see if user clicked middle of screen
-  if (mouseY < 80)
-  {
-    if (trialIndex==trialCount && userDone==false)
-    {
-      trialIndex = -1;
-      userDone = false;
-      finishTime = millis();
-      startTime = 0;
-    }
-    
-    println("MOUSEX: " + mouseY);
-    if (checkForSuccess()) {
-      trialIndex++;
-      isMove = true; 
-    }
-
-    screenTransX = 0;
-    screenTransY = 0;
-
-    if (trialIndex==trialCount && userDone==false)
-    {
-      userDone = true;
-      finishTime = millis();
-    }
-  }
   
 }
 
@@ -260,6 +274,12 @@ public boolean checkForSuccess()
 	
 	return closeDist && closeRotation && closeZ;	
 }
+
+public boolean checkForAngle() {
+    Target t = targets.get(trialIndex);
+  return calculateDifferenceBetweenAngles(t.rotation,screenRotation)<=5;
+}
+
 
 double calculateDifferenceBetweenAngles(float a1, float a2)
   {
