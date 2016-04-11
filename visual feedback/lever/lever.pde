@@ -66,11 +66,6 @@ void draw() {
 
   background(60); //background is dark grey
   rectMode(CORNER);
-  fill(50);
-  rect(0,0,width,height/2);
-  fill(100);
-  rect(0,height/2,width,height/2);
-
 
   if (startTime == 0)
     startTime = millis();
@@ -107,7 +102,13 @@ void draw() {
   fill(255, 0, 0); //set color to semi translucent
   if(checkForDist()) fill(0,255,0);
   rect(0, 0, t.z, t.z);
+  if (!isMove) {
+    stroke(0);
+    line(-t.z/2, -t.z/2, t.z/2, t.z/2);
+    line(-t.z/2, t.z/2, t.z/2, -t.z/2);
+  }
   fill(0);
+  noStroke();
   ellipse(0,0, 10,10); //center circle for targetting (gray) square
 
   popMatrix();
@@ -173,12 +174,12 @@ float startingX;
 float initY;
 float startingY;
 
-boolean isMove;
+boolean isMove = true;
+float startPress;
 
-void mousePressed() 
+void mousePressed()
 { if (trialIndex < trialCount) {
-  if (mouseY > height/2) isMove = true;
-  else isMove = false;
+  startPress = millis();
   Target t = targets.get(trialIndex);
   initRotation = t.rotation;
   startingRotation = calculateAngle(width/2,height/2, mouseX, mouseY); 
@@ -209,7 +210,11 @@ void mouseDragged() {
 }
 
 void mouseReleased()
-{
+{  
+  println(millis() - startPress);
+  if (millis() - startPress < 100) {
+    isMove = !isMove; 
+  }
   
   //check to see if user clicked middle of screen
   if (mouseY < 80)
@@ -223,8 +228,10 @@ void mouseReleased()
     }
     
     println("MOUSEX: " + mouseY);
-    if (checkForSuccess())
+    if (checkForSuccess()) {
       trialIndex++;
+      isMove = true; 
+    }
 
     screenTransX = 0;
     screenTransY = 0;
