@@ -7,7 +7,7 @@ int index = 0;
 float screenTransX = 0;
 float screenTransY = 0;
 float screenRotation = 0;
-float screenZ = 150f;
+float screenZ = 0;
 
 int trialCount = 20; //this will be set higher for the bakeoff
 float border = 0; //have some padding from the sides
@@ -42,6 +42,8 @@ void setup() {
   rectMode(CENTER);
   textFont(createFont("Arial", inchesToPixels(.15f))); //sets the font to Arial that is .3" tall
   textAlign(CENTER);
+  
+  screenZ = inchesToPixels(.15f);
 
   //don't change this! 
   border = inchesToPixels(.2f); //padding of 0.2 inches
@@ -106,7 +108,7 @@ void draw() {
   if(checkForDist()) fill(0,255,0);
   rect(0, 0, t.z, t.z);
   fill(0);
-  ellipse(0,0, 10,10);
+  ellipse(0,0, 10,10); //center circle for targetting (gray) square
 
   popMatrix();
 
@@ -121,7 +123,11 @@ void draw() {
   fill(255, 128); //set color to semi translucent
   rect(0, 0, screenZ, screenZ);
   fill(0);
-  ellipse(0,0, 5,5); //center circle for targetting (gray) square
+  noFill();
+  stroke(0);
+  strokeWeight(2);
+  ellipse(0,0, inchesToPixels(.1),inchesToPixels(.1));
+  noStroke();
 
   popMatrix();
 
@@ -170,7 +176,7 @@ float startingY;
 boolean isMove;
 
 void mousePressed() 
-{  
+{ if (trialIndex < trialCount) {
   if (mouseY > height/2) isMove = true;
   else isMove = false;
   Target t = targets.get(trialIndex);
@@ -182,20 +188,23 @@ void mousePressed()
   initY = t.y;
   startingX = mouseX;
   startingY = mouseY;
+  }
 }
 
 void mouseDragged() {
+  if (trialIndex <trialCount) {
   Target t = targets.get(trialIndex);
   if (!isMove) {
     float dRotation = calculateAngle(width/2,height/2, mouseX, mouseY) - startingRotation;
     t.rotation = initRotation + dRotation; 
-    float dZ = (calculateDist(width/2,height/2, mouseX, mouseY) - startingZ) * (sqrt(t.z)/13);
-    t.z = constrain(initZ + dZ, inchesToPixels(.25f), inchesToPixels(3f));
+    float dZ = (calculateDist(width/2,height/2, mouseX, mouseY) - startingZ) * 2;
+    t.z = constrain(initZ + dZ, inchesToPixels(.15f), inchesToPixels(3f));
   } else {
     float dX = mouseX - startingX;
     float dY = mouseY - startingY;
     t.x = initX +dX;
     t.y = initY +dY;
+  }
   }
 }
 
@@ -203,8 +212,16 @@ void mouseReleased()
 {
   
   //check to see if user clicked middle of screen
-  if (mouseY < 0);
+  if (mouseY < 80)
   {
+    if (trialIndex==trialCount && userDone==false)
+    {
+      trialIndex = -1;
+      userDone = false;
+      finishTime = millis();
+      startTime = 0;
+    }
+    
     println("MOUSEX: " + mouseY);
     if (checkForSuccess())
       trialIndex++;
@@ -232,10 +249,7 @@ public boolean checkForSuccess()
 	Target t = targets.get(trialIndex);	
 	boolean closeDist = dist(t.x,t.y,-screenTransX,-screenTransY)<inchesToPixels(.05f); //has to be within .1"
     boolean closeRotation = calculateDifferenceBetweenAngles(t.rotation,screenRotation)<=5;
-	boolean closeZ = abs(t.z - screenZ)<inchesToPixels(.05f); //has to be within .1"	
-	println("Close Enough Distance: " + closeDist);
-    println("Close Enough Rotation: " + closeRotation + "(dist="+calculateDifferenceBetweenAngles(t.rotation,screenRotation)+")");
-	println("Close Enough Z: " + closeZ);
+	boolean closeZ = abs(t.z - screenZ)<inchesToPixels(.05f); //has to be within .1"	);
 	
 	return closeDist && closeRotation && closeZ;	
 }
